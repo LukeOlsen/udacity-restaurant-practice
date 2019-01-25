@@ -7,9 +7,8 @@ from database_setup import Base, Restaurant, MenuItem
 
 engine = create_engine('sqlite:///restaurantmenu.db')
 Base.metadata.bind = engine
-DBSession = sessionmaker(bind = engine)
+DBSession = sessionmaker(bind=engine)
 session = DBSession()
-
 
 
 class webServerHandler(BaseHTTPRequestHandler):
@@ -22,7 +21,7 @@ class webServerHandler(BaseHTTPRequestHandler):
                 self.end_headers()
                 output = ""
                 output += "<html><body>"
-                output += "<a href='localhost:8080/restaurants/new'> Make a new restaurant here. </a>"
+                output += "<a href='/restaurants/new'> Make a new restaurant here. </a>"
                 restaurants = session.query(Restaurant).all()
                 for restaurant in restaurants:
                     output += "<p>"
@@ -42,10 +41,10 @@ class webServerHandler(BaseHTTPRequestHandler):
                 self.send_header('Content-type', 'text/html')
                 self.end_headers()
                 output = ""
-                output += "<h1> Make a New Restaurant"
+                output += "<h1> Make a New Restaurant</h1>"
                 output += """<form method='POST' enctype='multipart/form-data' action='/restaurants'>
                 <input name='restaurant' type='text'>
-                <input type='submit' value='Submit' </form>"""
+                <input type='submit' value='Submit' ></form>"""
                 self.wfile.write(output)
                 print output
                 return
@@ -90,15 +89,40 @@ class webServerHandler(BaseHTTPRequestHandler):
                 self.headers.getheader('content-type'))
             if ctype == 'multipart/form-data':
                 fields = cgi.parse_multipart(self.rfile, pdict)
-                messagecontent = fields.get('message')
-            output = ""
-            output += "<html><body>"
-            output += " <h2> Okay, how about this: </h2>"
-            output += "<h1> %s </h1>" % messagecontent[0]
-            output += '''<form method='POST' enctype='multipart/form-data' action='/hello'><h2>What would you like me to say?</h2><input name="message" type="text" ><input type="submit" value="Submit"> </form>'''
-            output += "</body></html>"
-            self.wfile.write(output)
-            print output
+                print fields
+                if fields['message'] is not None:
+                    messagecontent = fields.get('message')
+                    output = ""
+                    output += "<html><body>"
+                    output += " <h2> Okay, how about this: </h2>"
+                    output += "<h1> %s </h1>" % messagecontent[0]
+                    output += '''<form method='POST' enctype='multipart/form-data' action='/hello'><h2>What would you like me to say?</h2><input name="message" type="text" ><input type="submit" value="Submit"> </form>'''
+                    output += "</body></html>"
+                    self.wfile.write(output)
+                    print output
+                    return
+
+                if fields['restaurant'] is not None:
+                    print fields
+                    newRestaurantName = fields.get('restaurant')
+                    newRestaurant = Restaurant(name=newRestaurantName)
+                    output = ""
+                    output += "<html><body>"
+                    output += "<a href='/restaurants/new'> Make a new restaurant here. </a>"
+                    restaurants = session.query(Restaurant).all()
+                    for restaurant in restaurants:
+                        output += "<p>"
+                        output += restaurant.name
+                        output += "</br>"
+                        output += "<a href='#'> edit </a>"
+                        output += "</br>"
+                        output += "<a href='#'> delete </a>"
+                        output += "</p>"
+                    output += "</body></html>"
+                    self.wfile.write(output)
+                    print output
+                    return
+
         except:
             pass
 
